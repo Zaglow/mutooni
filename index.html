@@ -4,28 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>متوني - حفظ المتون</title>
-    <!-- Tailwind CSS (lightweight) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome 6 (free icons) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- React & ReactDOM & Babel for JSX -->
     <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
     <style>
-        /* Custom animations */
-        @keyframes flyUpRight {
-            0% { top: 260px; transform: translateX(-50%) scale(0.95); opacity: 0.7; }
-            100% { top: 0; transform: translateX(-50%) scale(1); opacity: 1; }
-        }
-        @keyframes flyUpLeft {
-            0% { top: 260px; transform: translateX(-50%) scale(0.95); opacity: 0.7; }
-            100% { top: 0; transform: translateX(-50%) scale(1); opacity: 1; }
-        }
-        @keyframes fadeOutTop {
-            0% { top: 0; opacity: 1; }
-            100% { top: -20px; opacity: 0; }
-        }
+        /* same as before */
+        @keyframes flyUpRight { 0% { top: 260px; transform: translateX(-50%) scale(0.95); opacity: 0.7; } 100% { top: 0; transform: translateX(-50%) scale(1); opacity: 1; } }
+        @keyframes flyUpLeft { 0% { top: 260px; transform: translateX(-50%) scale(0.95); opacity: 0.7; } 100% { top: 0; transform: translateX(-50%) scale(1); opacity: 1; } }
+        @keyframes fadeOutTop { 0% { top: 0; opacity: 1; } 100% { top: -20px; opacity: 0; } }
         .anim-fly-right { animation: flyUpRight 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; z-index: 50; }
         .anim-fly-left { animation: flyUpLeft 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; z-index: 50; }
         .anim-fade-out { animation: fadeOutTop 0.3s forwards; }
@@ -33,34 +21,126 @@
         .card-pos { position: absolute; width: 100%; height: 200px; left: 50%; transform: translateX(-50%); }
         .slot-top { top: 0; }
         .slot-bottom { top: 260px; }
+        .dropdown-menu {
+            position: absolute;
+            left: 0;
+            top: 100%;
+            border-radius: 1rem;
+            z-index: 50;
+            min-width: 150px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.1s;
+            white-space: nowrap;
+        }
+        .dropdown-item:hover {
+            background: rgba(0,0,0,0.15);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            max-width: 90%;
+            width: 400px;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+        }
+        .thumbnail-rect {
+            width: 80px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+        }
+        .thumbnail-placeholder {
+            width: 80px;
+            height: 100px;
+            background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            border-radius: 0.5rem;
+        }
+        .like-btn, .comment-btn {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .like-btn:hover, .comment-btn:hover {
+            transform: scale(1.05);
+        }
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: #3b75d6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-left: 0.5rem;
+        }
+        .audio-player-small {
+            width: 150px;
+            height: 30px;
+            margin-right: 0.5rem;
+        }
+        /* custom file upload button */
+        .file-upload-btn {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            border: 1px solid;
+            transition: background 0.2s;
+        }
     </style>
 </head>
 <body class="bg-[#1a1a1a] text-gray-100">
     <div id="root"></div>
 
     <script type="text/babel">
-        // ---------- React App (converted from your TSX) ----------
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // ----- Data & Config -----
-        const INITIAL_MUTUON = [
-            { id: "tuhfa", title: "تحفة الأطفال", author: "سليمان الجمزوري", category: "التجويد", segments: [{ text: "يَقُولُ رَاجِي رَحْمَةِ الْغَفُورِ دَوْمًا سُلَيْمَانُ هُوَ الْجَمْزُورِي الْحَمْدُ للهِ مُصَلِّيًا عَلَى مُحَمَّدٍ وَآلِهِ وَمَنْ تَلَى", notes: "مقدمة الناظم يبدأ فيها بالحمدلة والثناء." }] },
-            { id: "bayqunia", title: "المنظومة البيقونية", author: "البيقوني", category: "الحديث", segments: [{ text: "أَبْدَأُ بِالْحَمْدِ مُصَلِّياً عَلَى مُحَمَّدٍ خَيْرِ نَبِيٍّ أُرْسِلَا وَذِي مِنْ أَقْسَامِ الْحَدِيثِ عِدَّهْ وَكُلُّ وَاحِدٍ أَتَى وَحَدَّهْ", notes: "مقدمة المنظومة في علم مصطلح الحديث." }] }
+        // ---------- CONSTANTS ----------
+        const SYSTEM_MUTUON = [
+            { id: "tuhfa", title: "تحفة الأطفال", author: "سليمان الجمزوري", category: "التجويد", publisher: "سليمان الجمزوري", thumbnail: "", segments: [{ text: "يَقُولُ رَاجِي رَحْمَةِ الْغَفُورِ دَوْمًا سُلَيْمَانُ هُوَ الْجَمْزُورِي الْحَمْدُ للهِ مُصَلِّيًا عَلَى مُحَمَّدٍ وَآلِهِ وَمَنْ تَلَى", notes: "مقدمة الناظم يبدأ فيها بالحمدلة والثناء.", audio: "" }] },
+            { id: "bayqunia", title: "المنظومة البيقونية", author: "البيقوني", category: "الحديث", publisher: "البيقوني", thumbnail: "", segments: [{ text: "أَبْدَأُ بِالْحَمْدِ مُصَلِّياً عَلَى مُحَمَّدٍ خَيْرِ نَبِيٍّ أُرْسِلَا وَذِي مِنْ أَقْسَامِ الْحَدِيثِ عِدَّهْ وَكُلُّ وَاحِدٍ أَتَى وَحَدَّهْ", notes: "مقدمة المنظومة في علم مصطلح الحديث.", audio: "" }] }
         ];
         const CATEGORIES = ["التجويد", "الحديث", "السيرة", "الفقه", "الشعر", "أخرى"];
         const THEMES_CONFIG = {
-            dark: { name: 'داكن', bg: 'bg-[#1a1a1a]', practiceBg: 'bg-[#1c1c1e]', text: 'text-gray-100', textMuted: 'text-gray-400', cardBg: 'bg-[#2a2a2a]', cardBorder: 'border-[#3f3f3f]', btnHover: 'hover:bg-[#333]', emptySlot: 'bg-[#1a1a1a]/30 border-[#3f3f3f]', input: 'bg-[#2a2a2a] border-[#3f3f3f]', iconColor: 'text-gray-300', emptyRect: 'bg-[#1f1f1f] border border-[#333]', primaryAccent: 'bg-[#3b75d6] text-white' },
-            light: { name: 'مضيء', bg: 'bg-[#f8fafc]', practiceBg: 'bg-[#f1f5f9]', text: 'text-gray-900', textMuted: 'text-gray-500', cardBg: 'bg-white', cardBorder: 'border-[#cbd5e1]', btnHover: 'hover:bg-gray-100', emptySlot: 'bg-gray-100/50 border-[#cbd5e1]', input: 'bg-white border-[#cbd5e1]', iconColor: 'text-gray-700', emptyRect: 'bg-black/5 border border-black/10', primaryAccent: 'bg-blue-600 text-white' },
-            spring: { name: 'ربيعي', bg: 'bg-[#ecfdf5]', practiceBg: 'bg-[#d1fae5]', text: 'text-emerald-950', textMuted: 'text-emerald-700', cardBg: 'bg-white', cardBorder: 'border-emerald-200', btnHover: 'hover:bg-emerald-100', emptySlot: 'bg-emerald-200/40 border-emerald-300', input: 'bg-white border-emerald-200', iconColor: 'text-emerald-700', emptyRect: 'bg-emerald-900/5 border border-emerald-900/10', primaryAccent: 'bg-emerald-600 text-white' },
-            fall: { name: 'خريفي', bg: 'bg-[#fff7ed]', practiceBg: 'bg-[#ffedd5]', text: 'text-orange-950', textMuted: 'text-orange-700', cardBg: 'bg-white', cardBorder: 'border-orange-200', btnHover: 'hover:bg-orange-100', emptySlot: 'bg-orange-200/40 border-orange-300', input: 'bg-white border-orange-200', iconColor: 'text-orange-700', emptyRect: 'bg-orange-900/5 border border-orange-900/10', primaryAccent: 'bg-orange-600 text-white' }
+            dark: { name: 'داكن', bg: 'bg-[#1a1a1a]', practiceBg: 'bg-[#1c1c1e]', text: 'text-gray-100', textMuted: 'text-gray-400', cardBg: 'bg-[#2a2a2a]', cardBorder: 'border-[#3f3f3f]', btnHover: 'hover:bg-[#333]', emptySlot: 'bg-[#1a1a1a]/30 border-[#3f3f3f]', input: 'bg-[#2a2a2a] border-[#3f3f3f]', iconColor: 'text-gray-300', emptyRect: 'bg-[#1f1f1f] border border-[#333]', primaryAccent: 'bg-[#3b75d6] text-white', dropdownBg: '#2a2a2a', dropdownBorder: '#3f3f3f', modalText: 'text-gray-100' },
+            light: { name: 'مضيء', bg: 'bg-[#f8fafc]', practiceBg: 'bg-[#f1f5f9]', text: 'text-gray-900', textMuted: 'text-gray-500', cardBg: 'bg-white', cardBorder: 'border-[#cbd5e1]', btnHover: 'hover:bg-gray-100', emptySlot: 'bg-gray-100/50 border-[#cbd5e1]', input: 'bg-white border-[#cbd5e1]', iconColor: 'text-gray-700', emptyRect: 'bg-black/5 border border-black/10', primaryAccent: 'bg-blue-600 text-white', dropdownBg: '#ffffff', dropdownBorder: '#cbd5e1', modalText: 'text-gray-900' },
+            spring: { name: 'ربيعي', bg: 'bg-[#ecfdf5]', practiceBg: 'bg-[#d1fae5]', text: 'text-emerald-950', textMuted: 'text-emerald-700', cardBg: 'bg-white', cardBorder: 'border-emerald-200', btnHover: 'hover:bg-emerald-100', emptySlot: 'bg-emerald-200/40 border-emerald-300', input: 'bg-white border-emerald-200', iconColor: 'text-emerald-700', emptyRect: 'bg-emerald-900/5 border border-emerald-900/10', primaryAccent: 'bg-emerald-600 text-white', dropdownBg: '#ffffff', dropdownBorder: '#a7f3d0', modalText: 'text-emerald-950' },
+            fall: { name: 'خريفي', bg: 'bg-[#fff7ed]', practiceBg: 'bg-[#ffedd5]', text: 'text-orange-950', textMuted: 'text-orange-700', cardBg: 'bg-white', cardBorder: 'border-orange-200', btnHover: 'hover:bg-orange-100', emptySlot: 'bg-orange-200/40 border-orange-300', input: 'bg-white border-orange-200', iconColor: 'text-orange-700', emptyRect: 'bg-orange-900/5 border border-orange-900/10', primaryAccent: 'bg-orange-600 text-white', dropdownBg: '#ffffff', dropdownBorder: '#fed7aa', modalText: 'text-orange-950' }
         };
 
-        // Helper functions
         const normalizeSegments = (segments) => {
-            if (!segments) return [{ text: '', notes: '' }];
-            return segments.map(seg => typeof seg === 'string' ? { text: seg, notes: '' } : seg);
+            if (!segments || segments.length === 0) return [{ text: '', notes: '', audio: '' }];
+            return segments.map(seg => ({ text: seg.text || '', notes: seg.notes || '', audio: seg.audio || '' }));
         };
-
         const getWords = (matn, segmentIdx = 0) => {
             if (!matn) return [];
             const normSegs = normalizeSegments(matn.segments);
@@ -68,17 +148,245 @@
             return segmentText.split(/\s+/).filter(w => w.trim().length > 0);
         };
 
-        // ----- Main App Component -----
+        // ---------- CUSTOM ALERT & CONFIRM MODALS ----------
+        const AlertModal = ({ message, onClose, currentTheme }) => (
+            <div className="modal-overlay" onClick={onClose}>
+                <div className={`modal-content ${currentTheme.cardBg} ${currentTheme.cardBorder}`} onClick={e => e.stopPropagation()}>
+                    <p className={`${currentTheme.text} mb-4`}>{message}</p>
+                    <button onClick={onClose} className={`w-full py-2 rounded-xl ${currentTheme.primaryAccent}`}>حسناً</button>
+                </div>
+            </div>
+        );
+
+        const ConfirmModal = ({ message, onConfirm, onCancel, currentTheme }) => (
+            <div className="modal-overlay">
+                <div className={`modal-content ${currentTheme.cardBg} ${currentTheme.cardBorder}`} onClick={e => e.stopPropagation()}>
+                    <p className={`${currentTheme.text} mb-4`}>{message}</p>
+                    <div className="flex gap-3">
+                        <button onClick={onConfirm} className={`flex-1 py-2 rounded-xl ${currentTheme.primaryAccent}`}>نعم</button>
+                        <button onClick={onCancel} className={`flex-1 py-2 rounded-xl border ${currentTheme.btnHover}`}>لا</button>
+                    </div>
+                </div>
+            </div>
+        );
+
+        // ---------- AUDIO RECORDING MODAL ----------
+        const AudioModal = ({ onSave, onClose, currentTheme }) => {
+            const [recording, setRecording] = useState(false);
+            const [audioURL, setAudioURL] = useState(null);
+            const [mediaRecorder, setMediaRecorder] = useState(null);
+            const [audioChunks, setAudioChunks] = useState([]);
+            const fileInputRef = useRef(null);
+
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const recorder = new MediaRecorder(stream);
+                    const chunks = [];
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        const blob = new Blob(chunks, { type: 'audio/webm' });
+                        const url = URL.createObjectURL(blob);
+                        setAudioURL(url);
+                        setAudioChunks(chunks);
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    recorder.start();
+                    setMediaRecorder(recorder);
+                    setRecording(true);
+                } catch (err) {
+                    alertCustom("لا يمكن الوصول إلى الميكروفون", currentTheme);
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorder && recording) {
+                    mediaRecorder.stop();
+                    setRecording(false);
+                }
+            };
+
+            const handleFileUpload = (e) => {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('audio/')) {
+                    const url = URL.createObjectURL(file);
+                    setAudioURL(url);
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        setAudioChunks([ev.target.result]);
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alertCustom("الرجاء اختيار ملف صوتي", currentTheme);
+                }
+            };
+
+            const saveAudio = () => {
+                if (audioChunks.length > 0) {
+                    let base64 = audioChunks[0];
+                    if (typeof audioChunks[0] === 'object' && !audioChunks[0].startsWith('data:')) {
+                        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            onSave(reader.result);
+                            onClose();
+                        };
+                        reader.readAsDataURL(blob);
+                    } else {
+                        onSave(base64);
+                        onClose();
+                    }
+                } else {
+                    onClose();
+                }
+            };
+
+            return (
+                <div className="modal-overlay">
+                    <div className={`modal-content ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
+                        <h3 className={`text-xl font-bold mb-3 ${currentTheme.text}`}>تسجيل أو رفع صوت</h3>
+                        <div className="flex gap-3 mb-4">
+                            {!recording ? (
+                                <button onClick={startRecording} className={`flex-1 py-2 rounded-xl ${currentTheme.primaryAccent}`}>تسجيل</button>
+                            ) : (
+                                <button onClick={stopRecording} className={`flex-1 py-2 rounded-xl bg-red-600 text-white`}>إيقاف التسجيل</button>
+                            )}
+                            <button onClick={() => fileInputRef.current.click()} className={`flex-1 py-2 rounded-xl border ${currentTheme.btnHover}`}>رفع ملف</button>
+                            <input type="file" accept="audio/*" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                        </div>
+                        {audioURL && (
+                            <div className="mb-4">
+                                <audio controls src={audioURL} className="w-full"></audio>
+                            </div>
+                        )}
+                        <div className="flex gap-3">
+                            <button onClick={saveAudio} className={`flex-1 py-2 rounded-xl ${currentTheme.primaryAccent}`}>حفظ</button>
+                            <button onClick={onClose} className={`flex-1 py-2 rounded-xl border ${currentTheme.btnHover}`}>إلغاء</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Helper for custom alerts
+        const alertCustom = (message, currentTheme) => {
+            window.dispatchEvent(new CustomEvent('showAlert', { detail: { message, theme: currentTheme } }));
+        };
+        const confirmCustom = (message, currentTheme, onYes) => {
+            window.dispatchEvent(new CustomEvent('showConfirm', { detail: { message, theme: currentTheme, onYes } }));
+        };
+
+        // ---------- ADD / EDIT FORM COMPONENT with sleek thumbnail upload ----------
+        const AddMatnForm = ({ theme, editingMatn, onSave, onCancel, currentTheme, defaultPublisher }) => {
+            const [form, setForm] = useState(() => {
+                if (editingMatn) {
+                    return {
+                        title: editingMatn.title || '',
+                        author: editingMatn.author || '',
+                        category: editingMatn.category || 'التجويد',
+                        publisher: editingMatn.publisher || '',
+                        thumbnail: editingMatn.thumbnail || '',
+                        segments: normalizeSegments(editingMatn.segments)
+                    };
+                }
+                return { title: '', author: '', category: 'التجويد', publisher: defaultPublisher, thumbnail: '', segments: [{ text: '', notes: '', audio: '' }] };
+            });
+            const [thumbnailPreview, setThumbnailPreview] = useState(form.thumbnail);
+            const [audioModal, setAudioModal] = useState({ open: false, segmentIndex: null });
+            const fileInputRef = useRef(null);
+
+            const handleThumbnailClick = () => fileInputRef.current.click();
+            const handleThumbnailChange = (e) => {
+                const file = e.target.files[0];
+                if (file && file.size <= 10*1024*1024) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => { 
+                        setForm({...form, thumbnail: ev.target.result}); 
+                        setThumbnailPreview(ev.target.result); 
+                    };
+                    reader.readAsDataURL(file);
+                } else alertCustom("الصورة كبيرة جداً (حد أقصى 10 ميجابايت)", currentTheme);
+            };
+            const addSegment = () => setForm({...form, segments: [...form.segments, { text: '', notes: '', audio: '' }]});
+            const updateSegment = (idx, field, val) => {
+                const newSegs = [...form.segments];
+                newSegs[idx][field] = val;
+                setForm({...form, segments: newSegs});
+            };
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!form.title || !form.author) { alertCustom("العنوان والمؤلف إلزاميان", currentTheme); return; }
+                onSave(form);
+            };
+            const openAudioModal = (idx) => setAudioModal({ open: true, segmentIndex: idx });
+            const saveAudioForSegment = (audioBase64, idx) => {
+                updateSegment(idx, 'audio', audioBase64);
+            };
+
+            return (
+                <div dir="rtl" className={`min-h-screen p-6 ${currentTheme.bg} ${currentTheme.text}`}>
+                    <div className="max-w-md mx-auto">
+                        <button onClick={onCancel} className="mb-4 flex items-center gap-2"><i className="fas fa-arrow-right"></i> العودة</button>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <input type="text" placeholder="العنوان" required className={`w-full p-3 rounded-xl border ${currentTheme.input}`} value={form.title} onChange={e=>setForm({...form, title:e.target.value})} />
+                            <input type="text" placeholder="المؤلف" required className={`w-full p-3 rounded-xl border ${currentTheme.input}`} value={form.author} onChange={e=>setForm({...form, author:e.target.value})} />
+                            <input type="text" placeholder="الناشر (من نشر المتن)" className={`w-full p-3 rounded-xl border ${currentTheme.input}`} value={form.publisher} onChange={e=>setForm({...form, publisher:e.target.value})} />
+                            <select className={`w-full p-3 rounded-xl border ${currentTheme.input}`} value={form.category} onChange={e=>setForm({...form, category:e.target.value})}>
+                                {CATEGORIES.map(c=> <option key={c}>{c}</option>)}
+                            </select>
+                            <div>
+                                <label className="block text-sm mb-1">صورة مصغرة (اختياري)</label>
+                                <div className="flex items-center gap-3">
+                                    <div onClick={handleThumbnailClick} className={`file-upload-btn ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}>
+                                        <i className="fas fa-cloud-upload-alt"></i> اختر صورة
+                                    </div>
+                                    <input type="file" accept="image/*" ref={fileInputRef} onChange={handleThumbnailChange} className="hidden" />
+                                    {thumbnailPreview && <img src={thumbnailPreview} className="thumbnail-rect" alt="preview" />}
+                                    {!thumbnailPreview && <div className="thumbnail-placeholder">{form.title.slice(0,2) || "صورة"}</div>}
+                                </div>
+                            </div>
+                            <div className="space-y-3">
+                                {form.segments.map((seg, idx) => (
+                                    <div key={idx} className={`p-3 rounded-xl border ${currentTheme.cardBg}`}>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className={`text-sm font-bold ${currentTheme.textMuted}`}>المقطع {idx+1}</span>
+                                            <button type="button" onClick={() => openAudioModal(idx)} className="p-2 rounded-full hover:bg-black/10">
+                                                <i className="fas fa-microphone"></i>
+                                            </button>
+                                        </div>
+                                        {seg.audio && (
+                                            <audio controls src={seg.audio} className="w-full mb-2"></audio>
+                                        )}
+                                        <textarea placeholder={`نص المقطع ${idx+1}`} rows="3" className={`w-full p-2 rounded border ${currentTheme.input}`} value={seg.text} onChange={e=>updateSegment(idx, 'text', e.target.value)} required />
+                                        <textarea placeholder="ملاحظات" rows="2" className={`w-full p-2 rounded border mt-2 ${currentTheme.input}`} value={seg.notes} onChange={e=>updateSegment(idx, 'notes', e.target.value)} />
+                                    </div>
+                                ))}
+                                <button type="button" onClick={addSegment} className="w-full py-2 border-2 border-dashed rounded-xl"><i className="fas fa-plus"></i> إضافة مقطع</button>
+                            </div>
+                            <button type="submit" className={`w-full py-3 rounded-xl font-bold ${currentTheme.primaryAccent}`}>{editingMatn ? "حفظ التعديلات" : "إضافة للمكتبة"}</button>
+                        </form>
+                    </div>
+                    {audioModal.open && (
+                        <AudioModal 
+                            onSave={(audio) => { saveAudioForSegment(audio, audioModal.segmentIndex); setAudioModal({ open: false, segmentIndex: null }); }} 
+                            onClose={() => setAudioModal({ open: false, segmentIndex: null })} 
+                            currentTheme={currentTheme} 
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        // ---------- MAIN APP ----------
         const App = () => {
-            const [view, setView] = useState('home');
-            const [theme, setTheme] = useState(() => {
-                const saved = localStorage.getItem('mutooni_v7_theme');
-                return THEMES_CONFIG[saved] ? saved : 'dark';
+            const [theme, setTheme] = useState(() => localStorage.getItem('mutooni_v7_theme') || 'dark');
+            const [username, setUsername] = useState(() => localStorage.getItem('mutooni_username') || '');
+            const [showUsernameModal, setShowUsernameModal] = useState(!username);
+            const [personalMutuon, setPersonalMutuon] = useState(() => {
+                const saved = localStorage.getItem('mutooni_v7_personal');
+                return saved ? JSON.parse(saved) : [];
             });
-            const [mutuon, setMutuon] = useState(() => {
-                const saved = localStorage.getItem('mutooni_v7_data');
-                return saved ? JSON.parse(saved) : INITIAL_MUTUON;
-            });
+            const allMutuon = [...SYSTEM_MUTUON, ...personalMutuon];
             const [progress, setProgress] = useState(() => {
                 const saved = localStorage.getItem('mutooni_v7_progress');
                 return saved ? JSON.parse(saved) : {};
@@ -87,33 +395,178 @@
                 const saved = localStorage.getItem('mutooni_v7_mistakes');
                 return saved ? JSON.parse(saved) : {};
             });
+            const [view, setView] = useState('home');
             const [selectedMatn, setSelectedMatn] = useState(null);
+            const [previousView, setPreviousView] = useState('home'); // to remember where we came from
             const [currentSegmentIndex, setCurrentSegmentIndex] = useState(0);
             const [currentIndex, setCurrentIndex] = useState(0);
             const [animating, setAnimating] = useState(null);
             const [isComplete, setIsComplete] = useState(false);
             const [history, setHistory] = useState([]);
             const [showNotes, setShowNotes] = useState(false);
-            const [formData, setFormData] = useState({ title: '', author: '', category: 'التجويد', segments: [{ text: '', notes: '' }] });
             const [searchQuery, setSearchQuery] = useState('');
             const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('الكل');
             const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
-
+            const [openDropdownCardId, setOpenDropdownCardId] = useState(null);
+            const [reportModal, setReportModal] = useState({ open: false, matn: null, message: '' });
+            const [commentModal, setCommentModal] = useState({ open: false, matn: null, newComment: '', comments: [] });
+            const [editingMatn, setEditingMatn] = useState(null);
+            const [likeRefresh, setLikeRefresh] = useState(0);
+            // custom alert/confirm state
+            const [alertModal, setAlertModal] = useState({ open: false, message: '' });
+            const [confirmModal, setConfirmModal] = useState({ open: false, message: '', onYes: null });
+            
             const currentTheme = THEMES_CONFIG[theme];
-
+            
+            // custom alert handler
             useEffect(() => {
-                localStorage.setItem('mutooni_v7_data', JSON.stringify(mutuon));
+                const handleAlert = (e) => {
+                    setAlertModal({ open: true, message: e.detail.message });
+                };
+                const handleConfirm = (e) => {
+                    setConfirmModal({ open: true, message: e.detail.message, onYes: () => { e.detail.onYes(); setConfirmModal({ open: false, message: '', onYes: null }); } });
+                };
+                window.addEventListener('showAlert', handleAlert);
+                window.addEventListener('showConfirm', handleConfirm);
+                return () => {
+                    window.removeEventListener('showAlert', handleAlert);
+                    window.removeEventListener('showConfirm', handleConfirm);
+                };
+            }, []);
+            
+            useEffect(() => {
+                localStorage.setItem('mutooni_v7_personal', JSON.stringify(personalMutuon));
                 localStorage.setItem('mutooni_v7_progress', JSON.stringify(progress));
                 localStorage.setItem('mutooni_v7_mistakes', JSON.stringify(mistakes));
                 localStorage.setItem('mutooni_v7_theme', theme);
-            }, [mutuon, progress, mistakes, theme]);
+                if (username) localStorage.setItem('mutooni_username', username);
+            }, [personalMutuon, progress, mistakes, theme, username]);
 
-            const toggleTheme = () => {
-                const keys = Object.keys(THEMES_CONFIG);
-                const next = (keys.indexOf(theme) + 1) % keys.length;
-                setTheme(keys[next]);
+            const copyToPersonal = (systemMatn) => {
+                if (personalMutuon.some(p => p.originalId === systemMatn.id)) {
+                    alertCustom("هذا المتن موجود بالفعل في مكتبتك!", currentTheme);
+                    return;
+                }
+                const newId = Date.now() + '-' + Math.random();
+                const copy = JSON.parse(JSON.stringify(systemMatn));
+                copy.id = newId;
+                copy.originalId = systemMatn.id;
+                copy.publisher = username || "المستخدم";
+                copy.thumbnail = systemMatn.thumbnail || "";
+                setPersonalMutuon([copy, ...personalMutuon]);
+                alertCustom("تمت إضافة المتن إلى مكتبتك. يمكنك تعديله الآن.", currentTheme);
             };
-
+            
+            const deletePersonal = (id) => {
+                confirmCustom("هل أنت متأكد من حذف هذا المتن من مكتبتك؟", currentTheme, () => {
+                    const toDelete = personalMutuon.find(m => m.id === id);
+                    if (toDelete) {
+                        const newProgress = { ...progress };
+                        const newMistakes = { ...mistakes };
+                        for (let key in newProgress) if (key.startsWith(id)) delete newProgress[key];
+                        for (let key in newMistakes) if (key.startsWith(id)) delete newMistakes[key];
+                        setProgress(newProgress);
+                        setMistakes(newMistakes);
+                        setPersonalMutuon(personalMutuon.filter(m => m.id !== id));
+                    }
+                });
+            };
+            
+            const startEdit = (matn) => {
+                setEditingMatn(matn);
+                setView('add');
+            };
+            
+            const saveEdit = (updatedMatn) => {
+                setPersonalMutuon(personalMutuon.map(m => m.id === updatedMatn.id ? updatedMatn : m));
+                setEditingMatn(null);
+                setView('home');
+            };
+            
+            const addNewMatn = (newMatn) => {
+                const newId = Date.now() + '-' + Math.random();
+                const matnWithId = { ...newMatn, id: newId };
+                setPersonalMutuon([matnWithId, ...personalMutuon]);
+                setView('home');
+            };
+            
+            const shareMatn = (matn) => {
+                const url = `${window.location.origin}${window.location.pathname}?matnId=${matn.id}`;
+                navigator.clipboard.writeText(url);
+                alertCustom("تم نسخ رابط المتن: " + url, currentTheme);
+            };
+            
+            const openReport = (matn) => {
+                setReportModal({ open: true, matn, message: '' });
+                setOpenDropdownCardId(null);
+            };
+            const sendReport = () => {
+                const matn = reportModal.matn;
+                const subject = `إبلاغ عن متن: ${matn.title}`;
+                const body = `الرابط: ${window.location.origin}${window.location.pathname}?matnId=${matn.id}\n\nالتفاصيل: ${reportModal.message}`;
+                window.location.href = `mailto:www.abdozaglol2000@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                setReportModal({ open: false, matn: null, message: '' });
+            };
+            
+            const handleLike = (matnId) => {
+                let current = getLikes(matnId);
+                setLikes(matnId, current + 1);
+                setLikeRefresh(prev => prev + 1);
+            };
+            
+            const openCommentModal = (matn) => {
+                setCommentModal({
+                    open: true,
+                    matn: matn,
+                    newComment: '',
+                    comments: getComments(matn.id)
+                });
+                setOpenDropdownCardId(null);
+            };
+            const addNewComment = () => {
+                if (commentModal.newComment.trim()) {
+                    addComment(commentModal.matn.id, commentModal.newComment);
+                    setCommentModal({
+                        ...commentModal,
+                        comments: getComments(commentModal.matn.id),
+                        newComment: ''
+                    });
+                    setLikeRefresh(prev => prev + 1);
+                }
+            };
+            
+            // Helper functions for likes/comments
+            const getLikes = (matnId) => {
+                const likes = localStorage.getItem(`mutooni_likes_${matnId}`);
+                return likes ? parseInt(likes) : 0;
+            };
+            const setLikes = (matnId, count) => {
+                localStorage.setItem(`mutooni_likes_${matnId}`, count);
+            };
+            const getComments = (matnId) => {
+                const comments = localStorage.getItem(`mutooni_comments_${matnId}`);
+                return comments ? JSON.parse(comments) : [];
+            };
+            const addComment = (matnId, comment) => {
+                const comments = getComments(matnId);
+                comments.push({ text: comment, date: new Date().toLocaleString() });
+                localStorage.setItem(`mutooni_comments_${matnId}`, JSON.stringify(comments));
+            };
+            
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const matnId = params.get('matnId');
+                if (matnId) {
+                    const found = allMutuon.find(m => m.id === matnId);
+                    if (found) {
+                        setSelectedMatn(found);
+                        setPreviousView('home'); // default
+                        setView('matnInfo');
+                    }
+                }
+            }, []);
+            
+            // Practice handlers
             const handleAction = (direction) => {
                 if (animating || isComplete) return;
                 const wordKey = `${selectedMatn.id}-s${currentSegmentIndex}-${currentIndex}`;
@@ -137,7 +590,6 @@
                     else setIsComplete(true);
                 }, 500);
             };
-
             const undoAction = () => {
                 if (history.length === 0 || animating) return;
                 const last = history[history.length - 1];
@@ -148,14 +600,12 @@
                 setCurrentIndex(last.index);
                 setIsComplete(false);
             };
-
             const resetPractice = () => {
                 setCurrentIndex(0);
                 setIsComplete(false);
                 setAnimating(null);
                 setHistory([]);
             };
-
             const getLevelColor = (score) => {
                 if (score <= 2) return 'bg-orange-500';
                 if (score <= 4) return 'bg-yellow-400';
@@ -163,8 +613,7 @@
                 if (score <= 9) return 'bg-gray-400';
                 return 'bg-black';
             };
-
-            // Helper component for the card (word display)
+            
             const Card = ({ word, score = 0, mistakeCount = 0, isHidden = false }) => (
                 <div className={`w-full h-full border rounded-2xl flex flex-col items-center justify-center relative shadow-xl overflow-hidden transition-colors duration-300 ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
                     <div className="absolute top-4 left-4 flex flex-col gap-1.5 w-24">
@@ -180,21 +629,37 @@
                     {isHidden ? <span className={`text-7xl font-bold opacity-30 mt-4 ${currentTheme.textMuted}`}>؟</span> : <span className={`text-[3rem] font-bold leading-normal mt-4 drop-shadow-sm ${currentTheme.text}`}>{word}</span>}
                 </div>
             );
-
-            // ----- Home View -----
-            if (view === 'home') {
-                const filtered = mutuon.filter(m => m.title.includes(searchQuery) && (selectedCategoryFilter === 'الكل' || m.category === selectedCategoryFilter));
+            
+            // Thumbnail component
+            const MatnThumbnail = ({ matn }) => {
+                if (matn.thumbnail && matn.thumbnail.startsWith('data:image')) {
+                    return <img src={matn.thumbnail} className="thumbnail-rect" alt={matn.title} />;
+                }
+                return <div className="thumbnail-placeholder">{matn.title.slice(0,2)}</div>;
+            };
+            
+            // Home / Library render with like/comment buttons at bottom
+            const renderHomeOrLibrary = (showOnlyPersonal = false) => {
+                let data = showOnlyPersonal ? personalMutuon : allMutuon;
+                const filtered = data.filter(m => m.title.includes(searchQuery) && (selectedCategoryFilter === 'الكل' || m.category === selectedCategoryFilter));
+                const title = showOnlyPersonal ? "مكتبتي" : "كل المتون";
                 return (
                     <div dir="rtl" className={`min-h-screen transition-colors duration-300 p-6 flex flex-col font-sans ${currentTheme.bg} ${currentTheme.text}`}>
                         <header className="mb-8 max-w-md mx-auto w-full flex justify-between items-center">
-                            <h1 className="text-3.5xl font-black tracking-tight">متوني</h1>
                             <div className="flex items-center gap-2">
+                                <div className="logo"><i className="fas fa-book-open"></i></div>
+                                <h1 className="text-3.5xl font-black tracking-tight">{title}</h1>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={() => { setView('home'); setSearchQuery(''); }} className={`p-3 rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-home"></i></button>
+                                <button onClick={() => { setView('library'); setSearchQuery(''); }} className={`p-3 rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-book"></i></button>
+                                <button onClick={() => setShowUsernameModal(true)} className={`p-3 rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-user-cog"></i></button>
                                 <div className="relative">
-                                    <button onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)} className={`p-3 rounded-2xl border transition-colors ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.iconColor} ${currentTheme.btnHover}`}>
-                                        {theme === 'dark' && <i className="fas fa-moon w-5 h-5"></i>}
-                                        {theme === 'light' && <i className="fas fa-sun w-5 h-5"></i>}
-                                        {theme === 'spring' && <i className="fas fa-leaf w-5 h-5"></i>}
-                                        {theme === 'fall' && <i className="fas fa-tree w-5 h-5"></i>}
+                                    <button onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)} className={`p-3 rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}>
+                                        {theme === 'dark' && <i className="fas fa-moon"></i>}
+                                        {theme === 'light' && <i className="fas fa-sun"></i>}
+                                        {theme === 'spring' && <i className="fas fa-leaf"></i>}
+                                        {theme === 'fall' && <i className="fas fa-tree"></i>}
                                     </button>
                                     {isThemeMenuOpen && (
                                         <>
@@ -213,21 +678,19 @@
                                         </>
                                     )}
                                 </div>
-                                <button onClick={() => setView('add')} className={`p-3 rounded-2xl border transition-colors ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.iconColor} ${currentTheme.btnHover}`}><i className="fas fa-plus w-5 h-5"></i></button>
+                                <button onClick={() => { setEditingMatn(null); setView('add'); }} className={`p-3 rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-plus"></i></button>
                             </div>
                         </header>
                         <div className="max-w-md mx-auto w-full mb-4 relative">
                             <i className={`fas fa-search absolute right-4 top-1/2 -translate-y-1/2 ${currentTheme.textMuted}`}></i>
-                            <input type="text" placeholder="ابحث في متونك..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full border rounded-2xl py-3.5 pr-12 pl-4 outline-none transition-colors ${currentTheme.input} ${currentTheme.text}`} />
+                            <input type="text" placeholder="ابحث..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className={`w-full border rounded-2xl py-3.5 pr-12 pl-4 outline-none ${currentTheme.input} ${currentTheme.text}`} />
                         </div>
-                        <div className="max-w-md mx-auto w-full mb-6">
-                            <div className="relative">
-                                <select value={selectedCategoryFilter} onChange={(e) => setSelectedCategoryFilter(e.target.value)} className={`w-full appearance-none border rounded-2xl py-3 px-4 pr-10 font-bold outline-none transition-colors shadow-sm cursor-pointer ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.text}`}>
-                                    <option value="الكل">الكل ({mutuon.length})</option>
-                                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat} ({mutuon.filter(m => m.category === cat).length})</option>)}
-                                </select>
-                                <i className={`fas fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 ${currentTheme.textMuted}`}></i>
-                            </div>
+                        <div className="max-w-md mx-auto w-full mb-6 relative">
+                            <select value={selectedCategoryFilter} onChange={(e) => setSelectedCategoryFilter(e.target.value)} className={`w-full appearance-none border rounded-2xl py-3 px-4 pr-10 font-bold outline-none cursor-pointer ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.text}`}>
+                                <option value="الكل">الكل ({data.length})</option>
+                                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat} ({data.filter(m => m.category === cat).length})</option>)}
+                            </select>
+                            <i className={`fas fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 ${currentTheme.textMuted}`}></i>
                         </div>
                         <main className="flex-1 max-w-md mx-auto w-full space-y-4">
                             {filtered.map(m => {
@@ -239,28 +702,113 @@
                                     for (let i=0; i<words.length; i++) totalScore += (progress[`${m.id}-s${s}-${i}`] || 0);
                                 }
                                 const percent = totalWords ? Math.round((totalScore / (totalWords * 10)) * 100) : 0;
+                                const isSys = !personalMutuon.some(p => p.id === m.id);
+                                const likesCount = getLikes(m.id);
+                                const commentsCount = getComments(m.id).length;
                                 return (
-                                    <div key={m.id} onClick={() => { setSelectedMatn(m); setCurrentSegmentIndex(0); setCurrentIndex(0); setHistory([]); setIsComplete(false); setShowNotes(false); setView('practice'); }} className={`p-5 rounded-3xl cursor-pointer border transition-all duration-300 relative group shadow-sm hover:translate-y-[-2px] hover:shadow-md ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}>
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div>
-                                                <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold inline-block mb-2 ml-2 ${currentTheme.emptySlot} ${currentTheme.text}`}>{m.category || 'عام'}</span>
-                                                <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold inline-block mb-2 ${currentTheme.emptySlot} ${currentTheme.text}`}>{normSegs.length} {normSegs.length === 1 ? 'مقطع' : 'مقاطع'}</span>
-                                                <h3 className={`text-xl font-bold mb-1 ${currentTheme.text}`}>{m.title}</h3>
-                                                <p className={`text-xs ${currentTheme.textMuted}`}>{m.author}</p>
+                                    <div key={m.id} className={`relative rounded-3xl border transition-all shadow-sm hover:shadow-md ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
+                                        <div onClick={() => { setSelectedMatn(m); setPreviousView(showOnlyPersonal ? 'library' : 'home'); setView('matnInfo'); }} className="p-5 cursor-pointer flex gap-3">
+                                            <MatnThumbnail matn={m} />
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold inline-block mb-2 ml-2 ${currentTheme.emptySlot}`}>{m.category}</span>
+                                                        <h3 className={`text-xl font-bold mb-1 ${currentTheme.text}`}>{m.title}</h3>
+                                                        <p className={`text-xs ${currentTheme.textMuted}`}>{m.author}</p>
+                                                        <p className={`text-[10px] mt-1 ${currentTheme.textMuted}`}>نشره: {m.publisher || "غير معروف"}</p>
+                                                    </div>
+                                                    <div className="relative">
+                                                        <button onClick={(e) => { e.stopPropagation(); setOpenDropdownCardId(openDropdownCardId === m.id ? null : m.id); }} className="p-2 rounded-full hover:bg-black/10">
+                                                            <i className="fas fa-ellipsis-v"></i>
+                                                        </button>
+                                                        {openDropdownCardId === m.id && (
+                                                            <div className="dropdown-menu" style={{ backgroundColor: currentTheme.dropdownBg, borderColor: currentTheme.dropdownBorder }}>
+                                                                {isSys ? (
+                                                                    <>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); copyToPersonal(m); setOpenDropdownCardId(null); }}><i className="fas fa-copy"></i> إضافة لمكتبتي</div>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); shareMatn(m); setOpenDropdownCardId(null); }}><i className="fas fa-share-alt"></i> مشاركة</div>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); openReport(m); setOpenDropdownCardId(null); }}><i className="fas fa-flag"></i> إبلاغ</div>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); startEdit(m); setOpenDropdownCardId(null); }}><i className="fas fa-edit"></i> تعديل</div>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); deletePersonal(m.id); setOpenDropdownCardId(null); }}><i className="fas fa-trash-alt"></i> حذف</div>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); shareMatn(m); setOpenDropdownCardId(null); }}><i className="fas fa-share-alt"></i> مشاركة</div>
+                                                                        <div className="dropdown-item" style={{ color: currentTheme.text }} onClick={(e) => { e.stopPropagation(); openReport(m); setOpenDropdownCardId(null); }}><i className="fas fa-flag"></i> إبلاغ</div>
+                                                                    </>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-between text-xs mt-3 font-semibold"><span>الإنجاز</span><span>{percent}%</span></div>
+                                                <div className={`w-full h-2 rounded-full overflow-hidden mt-1 ${currentTheme.emptyRect}`}><div className="h-full" style={{ width: `${percent}%`, backgroundColor: '#3b82f6' }} /></div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between text-xs mb-2 font-semibold" style={{ color: currentTheme.iconColor }}><span>الإنجاز الإجمالي</span><span className="font-bold">{percent}%</span></div>
-                                        <div className={`w-full h-2 rounded-full overflow-hidden ${theme === 'dark' ? 'bg-[#1f1f1f]' : 'bg-black/5'}`}><div className="h-full transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: percent === 100 ? '#10b981' : '#3b82f6' }} /></div>
+                                        <div className="flex justify-around p-3 border-t" style={{ borderColor: currentTheme.cardBorder.replace('border-', '') }}>
+                                            <button onClick={(e) => { e.stopPropagation(); handleLike(m.id); }} className={`like-btn flex items-center gap-2 text-sm ${currentTheme.textMuted} hover:text-red-500`}>
+                                                <i className="fas fa-heart"></i> {likesCount}
+                                            </button>
+                                            <button onClick={(e) => { e.stopPropagation(); openCommentModal(m); }} className={`comment-btn flex items-center gap-2 text-sm ${currentTheme.textMuted} hover:text-blue-500`}>
+                                                <i className="fas fa-comment"></i> {commentsCount}
+                                            </button>
+                                        </div>
                                     </div>
                                 );
                             })}
-                            {filtered.length === 0 && <div className="text-center py-16 opacity-60"><i className={`fas fa-book-open w-12 h-12 mx-auto mb-3 ${currentTheme.textMuted}`}></i><p className={`text-sm ${currentTheme.textMuted}`}>لا توجد متون مطابقة.</p></div>}
                         </main>
                     </div>
                 );
+            };
+            
+            // ---------- VIEW RENDERING ----------
+            // Matn Info page: show all segments with notes and audio, plus edit button if in library
+            if (view === 'matnInfo' && selectedMatn) {
+                const alreadyInLibrary = personalMutuon.some(p => p.id === selectedMatn.id);
+                const segs = normalizeSegments(selectedMatn.segments);
+                return (
+                    <div dir="rtl" className={`min-h-screen p-6 ${currentTheme.bg} ${currentTheme.text}`}>
+                        <div className="max-w-md mx-auto">
+                            <button onClick={() => setView(previousView)} className="mb-4 flex items-center gap-2"><i className="fas fa-arrow-right"></i> العودة</button>
+                            <div className={`rounded-3xl border p-6 mb-6 ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
+                                {selectedMatn.thumbnail ? (
+                                    <img src={selectedMatn.thumbnail} className="thumbnail-rect mx-auto" alt="thumbnail" />
+                                ) : (
+                                    <div className="thumbnail-placeholder mx-auto">{selectedMatn.title.slice(0,2)}</div>
+                                )}
+                                <h2 className="text-2xl font-bold text-center mt-4">{selectedMatn.title}</h2>
+                                <p className="text-center text-sm mt-1">المؤلف: {selectedMatn.author}</p>
+                                <p className="text-center text-xs mt-1">الناشر: {selectedMatn.publisher || "غير معروف"}</p>
+                                <p className="text-center text-xs mt-1">التصنيف: {selectedMatn.category}</p>
+                                <div className="flex flex-col gap-3 mt-6">
+                                    <button onClick={() => { setCurrentSegmentIndex(0); setCurrentIndex(0); setIsComplete(false); setHistory([]); setShowNotes(false); setView('practice'); }} className={`py-3 rounded-xl font-bold text-lg ${currentTheme.primaryAccent}`}>ابدأ الدراسة</button>
+                                    {alreadyInLibrary ? (
+                                        <button onClick={() => startEdit(selectedMatn)} className={`py-2 rounded-xl border ${currentTheme.btnHover}`}>تعديل المتن</button>
+                                    ) : (
+                                        <button onClick={() => copyToPersonal(selectedMatn)} className={`py-2 rounded-xl border ${currentTheme.btnHover}`}>حفظ في مكتبتي</button>
+                                    )}
+                                    <button onClick={() => shareMatn(selectedMatn)} className={`py-2 rounded-xl border ${currentTheme.btnHover}`}>مشاركة</button>
+                                </div>
+                            </div>
+                            {/* Segments list with notes and audio */}
+                            <h3 className="text-xl font-bold mb-3">المقاطع:</h3>
+                            {segs.map((seg, idx) => (
+                                <div key={idx} className={`rounded-2xl border p-4 mb-3 ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
+                                    <p className="font-bold mb-2">المقطع {idx+1}</p>
+                                    <p className="text-sm whitespace-pre-wrap mb-2">{seg.text}</p>
+                                    {seg.notes && <p className={`text-xs italic mb-2 ${currentTheme.textMuted}`}>📝 {seg.notes}</p>}
+                                    {seg.audio ? (
+                                        <audio controls src={seg.audio} className="w-full mt-2"></audio>
+                                    ) : (
+                                        <p className={`text-xs ${currentTheme.textMuted} mt-2`}>لا يوجد تسجيل صوتي</p>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
             }
-
-            // ----- Practice View -----
+            
             if (view === 'practice' && selectedMatn) {
                 const normSegs = normalizeSegments(selectedMatn.segments);
                 const activeSegment = normSegs[currentSegmentIndex];
@@ -271,60 +819,47 @@
                 const currentWordKey = `${selectedMatn.id}-s${currentSegmentIndex}-${bottomWordIndex}`;
                 return (
                     <div dir="rtl" className={`min-h-screen flex flex-col font-sans overflow-hidden transition-colors duration-300 ${currentTheme.practiceBg} ${currentTheme.text}`}>
-                        <header className={`py-4 px-6 flex justify-between items-center z-10 border-b ${currentTheme.cardBorder} ${currentTheme.cardBg}`}>
-                            <button onClick={() => setView('home')} className={`transition ${currentTheme.iconColor} hover:opacity-70`}><i className="fas fa-chevron-right w-7 h-7 text-xl"></i></button>
-                            <div className="flex-1 flex flex-col items-center mx-4 relative">
-                                {normSegs.length > 1 ? (
-                                    <div className="relative w-full max-w-[150px]">
-                                        <select value={currentSegmentIndex} onChange={(e) => { setCurrentSegmentIndex(Number(e.target.value)); setCurrentIndex(0); setIsComplete(false); setHistory([]); setShowNotes(false); }} className={`w-full appearance-none text-center bg-transparent text-lg font-bold outline-none cursor-pointer ${currentTheme.text}`}>
-                                            {normSegs.map((_, i) => <option key={i} value={i}>المقطع {i + 1}</option>)}
-                                        </select>
-                                        <i className="fas fa-chevron-down absolute left-0 top-1/2 -translate-y-1/2 text-sm"></i>
-                                    </div>
-                                ) : <h2 className="text-lg font-bold">{selectedMatn.title}</h2>}
-                                <div className={`text-sm font-semibold mt-1 ${currentTheme.textMuted}`}>{!isComplete ? `${currentIndex + 1} من ${words.length}` : 'مكتمل'}</div>
-                            </div>
-                            {normSegs.length > 1 ? <button onClick={() => { const randomIdx = Math.floor(Math.random() * normSegs.length); setCurrentSegmentIndex(randomIdx); setCurrentIndex(0); setIsComplete(false); setHistory([]); setShowNotes(false); }} className={`transition ${currentTheme.iconColor} hover:opacity-70`}><i className="fas fa-random w-6 h-6"></i></button> : <div className="w-7 h-7"></div>}
+                        <header className={`py-4 px-6 flex justify-between items-center border-b ${currentTheme.cardBorder} ${currentTheme.cardBg}`}>
+                            <button onClick={() => setView('matnInfo')}><i className="fas fa-chevron-right text-xl"></i></button>
+                            <div className="flex-1 text-center font-bold">{selectedMatn.title} - {currentSegmentIndex+1}/{normSegs.length}</div>
+                            {normSegs.length > 1 && <button onClick={() => { const rand = Math.floor(Math.random() * normSegs.length); setCurrentSegmentIndex(rand); setCurrentIndex(0); setIsComplete(false); setHistory([]); }}><i className="fas fa-random"></i></button>}
                         </header>
-
-                        <div className={`flex justify-center gap-6 py-3 border-b shadow-sm z-10 relative ${currentTheme.cardBorder} ${currentTheme.cardBg}`}>
-                            <button className={`flex items-center gap-1.5 text-sm font-bold transition-opacity hover:opacity-70 ${currentTheme.textMuted}`}><i className="fas fa-play w-4 h-4"></i> صوت</button>
-                            <button onClick={() => setShowNotes(!showNotes)} className={`flex items-center gap-1.5 text-sm font-bold transition-opacity hover:opacity-70 ${showNotes ? currentTheme.text : currentTheme.textMuted}`}><i className="fas fa-file-alt w-4 h-4"></i> شرح</button>
-                            <button className={`flex items-center gap-1.5 text-sm font-bold transition-opacity hover:opacity-70 ${currentTheme.textMuted}`}><i className="fas fa-comment w-4 h-4"></i> <span className="text-[10px] bg-black/10 px-1.5 py-0.5 rounded-full">0</span></button>
-                        </div>
-
-                        {showNotes && (
-                            <div className={`m-4 p-5 rounded-2xl text-sm leading-relaxed border shadow-sm relative z-20 ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
-                                <h4 className="font-bold mb-2 flex items-center gap-2"><i className="fas fa-file-alt"></i> الشرح والملاحظات:</h4>
-                                <p className={currentTheme.textMuted}>{activeSegment.notes || 'لا توجد ملاحظات مضافة لهذا المقطع.'}</p>
+                        <div className={`flex justify-center gap-6 py-3 border-b ${currentTheme.cardBorder}`}>
+                            <div className="flex items-center gap-2">
+                                {activeSegment.audio ? (
+                                    <audio controls src={activeSegment.audio} className="audio-player-small" />
+                                ) : (
+                                    <span className={`text-xs ${currentTheme.textMuted}`}>لا يوجد تسجيل</span>
+                                )}
                             </div>
-                        )}
-
-                        <div className="flex-1 flex flex-col items-center justify-center relative w-full pt-4">
+                            <button onClick={() => setShowNotes(!showNotes)} className={`flex items-center gap-1 ${showNotes ? currentTheme.text : currentTheme.textMuted}`}><i className="fas fa-file-alt"></i> شرح</button>
+                        </div>
+                        {showNotes && <div className={`m-4 p-5 rounded-2xl border ${currentTheme.cardBg}`}><p>{activeSegment.notes || "لا توجد ملاحظات"}</p></div>}
+                        <div className="flex-1 flex flex-col items-center justify-center pt-4">
                             {isComplete ? (
-                                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                                    <i className="fas fa-trophy w-14 h-14 mb-4 text-yellow-500 text-5xl"></i>
-                                    <h1 className="text-4xl font-black mb-10">أحسنت!</h1>
-                                    <div className="w-full max-w-xs flex flex-col gap-3">
-                                        {currentSegmentIndex < normSegs.length - 1 && <button onClick={() => { setCurrentSegmentIndex(prev => prev + 1); setCurrentIndex(0); setIsComplete(false); setHistory([]); setShowNotes(false); }} className={`w-full py-4 font-bold rounded-2xl flex items-center justify-center gap-2 shadow-md ${currentTheme.primaryAccent}`}>التالي <i className="fas fa-chevron-left"></i></button>}
-                                        <button onClick={resetPractice} className={`w-full py-4 font-bold rounded-2xl flex items-center justify-center gap-2 border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-undo-alt"></i> إعادة المقطع</button>
-                                        <button onClick={() => setView('home')} className={`w-full py-4 font-bold rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}>العودة للرئيسية</button>
+                                <div className="text-center p-6">
+                                    <i className="fas fa-trophy text-6xl text-yellow-500 mb-4"></i>
+                                    <h1 className="text-4xl font-black mb-6">أحسنت!</h1>
+                                    <div className="flex flex-col gap-3 w-64 mx-auto">
+                                        {currentSegmentIndex < normSegs.length-1 && <button onClick={() => { setCurrentSegmentIndex(prev=>prev+1); setCurrentIndex(0); setIsComplete(false); setHistory([]); }} className={`py-3 rounded-xl ${currentTheme.primaryAccent}`}>التالي</button>}
+                                        <button onClick={resetPractice} className={`py-3 rounded-xl border ${currentTheme.btnHover}`}>إعادة المقطع</button>
+                                        <button onClick={() => setView('matnInfo')} className={`py-3 rounded-xl border ${currentTheme.btnHover}`}>العودة للمتن</button>
                                     </div>
                                 </div>
                             ) : (
                                 <>
                                     <div className="card-container">
                                         <div className={`card-pos slot-top border-2 border-dashed ${currentTheme.emptySlot} rounded-2xl`} />
-                                        {animating && topWordIndex >= 0 && <div className="card-pos slot-top anim-fade-out"><Card word={words[topWordIndex]} score={progress[prevWordKey]} mistakeCount={mistakes[prevWordKey]} /></div>}
-                                        {!animating && topWordIndex >= 0 && <div className="card-pos slot-top"><Card word={words[topWordIndex]} score={progress[prevWordKey]} mistakeCount={mistakes[prevWordKey]} /></div>}
+                                        {animating && topWordIndex>=0 && <div className="card-pos slot-top anim-fade-out"><Card word={words[topWordIndex]} score={progress[prevWordKey]} mistakeCount={mistakes[prevWordKey]} /></div>}
+                                        {!animating && topWordIndex>=0 && <div className="card-pos slot-top"><Card word={words[topWordIndex]} score={progress[prevWordKey]} mistakeCount={mistakes[prevWordKey]} /></div>}
                                         <div className={`card-pos slot-bottom border-2 border-dashed ${currentTheme.emptySlot} rounded-2xl`} />
-                                        {!animating && <div className="card-pos slot-bottom"><Card isHidden={true} mistakeCount={mistakes[currentWordKey] || 0} score={progress[currentWordKey] || 0} /></div>}
-                                        {animating && <div className={`card-pos ${animating === 'right' ? 'anim-fly-right' : 'anim-fly-left'}`}><Card word={words[bottomWordIndex]} score={progress[currentWordKey]} mistakeCount={mistakes[currentWordKey]} /></div>}
+                                        {!animating && <div className="card-pos slot-bottom"><Card isHidden={true} mistakeCount={mistakes[currentWordKey]||0} score={progress[currentWordKey]||0} /></div>}
+                                        {animating && <div className={`card-pos ${animating==='right'?'anim-fly-right':'anim-fly-left'}`}><Card word={words[bottomWordIndex]} score={progress[currentWordKey]} mistakeCount={mistakes[currentWordKey]} /></div>}
                                     </div>
-                                    <div className="w-full max-w-sm flex justify-between items-center px-4 mt-8 pb-10">
-                                        <button onClick={undoAction} disabled={history.length === 0 || animating !== null} className={`w-14 h-14 rounded-2xl border flex items-center justify-center transition-all ${history.length === 0 || animating !== null ? 'opacity-30' : `${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}`}><i className="fas fa-undo-alt w-6 h-6"></i></button>
-                                        <button onClick={() => handleAction('left')} className={`flex-1 mx-2 py-4 rounded-2xl border flex flex-col items-center justify-center gap-1 active:scale-95 ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-times w-6 h-6 text-red-500"></i><span className="text-[10px] font-bold opacity-60">لا أعرفها</span></button>
-                                        <button onClick={() => handleAction('right')} className={`flex-1 mx-2 py-4 rounded-2xl border flex flex-col items-center justify-center gap-1 active:scale-95 ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-check w-6 h-6 text-green-500"></i><span className="text-[10px] font-bold opacity-60">أعرفها</span></button>
+                                    <div className="flex justify-between w-full max-w-sm px-4 mt-8">
+                                        <button onClick={undoAction} disabled={history.length===0 || animating} className={`w-14 h-14 rounded-2xl border flex justify-center items-center ${history.length===0?'opacity-30':currentTheme.cardBg}`}><i className="fas fa-undo-alt"></i></button>
+                                        <button onClick={()=>handleAction('left')} className="flex-1 mx-2 py-4 rounded-2xl border flex flex-col items-center"><i className="fas fa-times text-red-500"></i>لا أعرفها</button>
+                                        <button onClick={()=>handleAction('right')} className="flex-1 mx-2 py-4 rounded-2xl border flex flex-col items-center"><i className="fas fa-check text-green-500"></i>أعرفها</button>
                                     </div>
                                 </>
                             )}
@@ -332,46 +867,85 @@
                     </div>
                 );
             }
-
-            // ----- Add Matn View -----
+            
             if (view === 'add') {
+                return <AddMatnForm 
+                    theme={theme} 
+                    editingMatn={editingMatn} 
+                    onSave={editingMatn ? saveEdit : addNewMatn} 
+                    onCancel={() => { setEditingMatn(null); setView(previousView === 'library' ? 'library' : 'home'); }} 
+                    currentTheme={currentTheme}
+                    defaultPublisher={username}
+                />;
+            }
+            
+            // Username modal
+            if (showUsernameModal) {
                 return (
-                    <div dir="rtl" className={`min-h-screen p-6 flex flex-col font-sans overflow-y-auto ${currentTheme.bg} ${currentTheme.text}`}>
-                        <header className="flex items-center gap-4 mb-10 max-w-md mx-auto w-full">
-                            <button onClick={() => setView('home')} className={`p-3 rounded-2xl border ${currentTheme.cardBg} ${currentTheme.cardBorder} ${currentTheme.btnHover}`}><i className="fas fa-chevron-right"></i></button>
-                            <h2 className="text-2xl font-black">متن جديد</h2>
-                        </header>
-                        <form onSubmit={(e) => { e.preventDefault(); const newMatn = { ...formData, id: Date.now().toString() }; setMutuon([newMatn, ...mutuon]); setFormData({ title: '', author: '', category: 'التجويد', segments: [{ text: '', notes: '' }] }); setView('home'); }} className="space-y-5 flex-1 max-w-md mx-auto w-full pb-10">
-                            <input required maxLength={40} type="text" placeholder="عنوان المتن (بحد أقصى 40 حرفاً)" className={`w-full border rounded-2xl py-4 px-6 outline-none transition-colors font-bold ${currentTheme.input} ${currentTheme.text}`} value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-                            <input required type="text" placeholder="اسم الناظم / المؤلف (إلزامي)" className={`w-full border rounded-2xl py-4 px-6 outline-none transition-colors text-sm ${currentTheme.input} ${currentTheme.text}`} value={formData.author} onChange={(e) => setFormData({ ...formData, author: e.target.value })} />
-                            <div className="relative">
-                                <select className={`w-full appearance-none border rounded-2xl py-4 px-6 pr-10 outline-none text-sm font-bold cursor-pointer ${currentTheme.input} ${currentTheme.text}`} value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
-                                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                                </select>
-                                <i className={`fas fa-chevron-down absolute left-4 top-1/2 -translate-y-1/2 ${currentTheme.textMuted}`}></i>
+                    <div className="modal-overlay">
+                        <div className={`modal-content ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
+                            <h3 className={`text-xl font-bold mb-3 ${currentTheme.text}`}>👤 اسم الناشر</h3>
+                            <p className={`text-sm mb-3 ${currentTheme.textMuted}`}>أدخل اسمك ليظهر كـ "نشره" عند إضافة متون جديدة</p>
+                            <input type="text" placeholder="اسمك" className={`w-full p-3 rounded-xl border ${currentTheme.input} ${currentTheme.text}`} value={username} onChange={e => setUsername(e.target.value)} />
+                            <div className="flex gap-3 mt-4">
+                                <button onClick={() => { if (username.trim()) { setShowUsernameModal(false); } else { alertCustom("الرجاء إدخال اسم", currentTheme); } }} className={`flex-1 py-2 rounded-xl ${currentTheme.primaryAccent}`}>حفظ</button>
                             </div>
-                            <div className="space-y-4 pt-2">
-                                <div className={`text-sm font-bold ${currentTheme.textMuted} mb-2`}>مقاطع المتن:</div>
-                                {formData.segments.map((seg, idx) => (
-                                    <div key={idx} className={`p-4 rounded-3xl border space-y-3 ${currentTheme.cardBg} ${currentTheme.cardBorder}`}>
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className={`text-xs font-bold ${currentTheme.textMuted}`}>المقطع {idx + 1}</span>
-                                            <button type="button" className={`p-2 rounded-full border transition-colors ${currentTheme.emptySlot} ${currentTheme.textMuted} hover:opacity-80`}><i className="fas fa-microphone"></i></button>
-                                        </div>
-                                        <textarea required rows={3} placeholder={`نص المقطع ${idx + 1}...`} className={`w-full border rounded-2xl py-3 px-4 outline-none text-sm leading-relaxed resize-none ${currentTheme.input} ${currentTheme.text}`} value={seg.text} onChange={(e) => { const newSegs = [...formData.segments]; newSegs[idx] = { ...newSegs[idx], text: e.target.value }; setFormData({ ...formData, segments: newSegs }); }} />
-                                        <textarea rows={2} placeholder="إضافة شرح أو ملاحظات للمقطع (اختياري)..." className={`w-full border rounded-2xl py-3 px-4 outline-none text-xs leading-relaxed resize-none bg-opacity-50 ${currentTheme.input} ${currentTheme.text}`} value={seg.notes} onChange={(e) => { const newSegs = [...formData.segments]; newSegs[idx] = { ...newSegs[idx], notes: e.target.value }; setFormData({ ...formData, segments: newSegs }); }} />
-                                    </div>
-                                ))}
-                                <button type="button" onClick={() => setFormData({ ...formData, segments: [...formData.segments, { text: '', notes: '' }] })} className={`w-full py-4 border-2 border-dashed rounded-3xl flex items-center justify-center gap-2 font-bold transition-colors ${currentTheme.emptySlot} ${currentTheme.text} ${currentTheme.btnHover}`}><i className="fas fa-plus"></i> إضافة مقطع آخر</button>
-                            </div>
-                            <button type="submit" className={`w-full font-black py-5 rounded-2xl shadow-md mt-6 ${currentTheme.primaryAccent}`}>إضافة للمكتبة</button>
-                        </form>
+                        </div>
                     </div>
                 );
             }
-            return null;
+            
+            if (view === 'library') return renderHomeOrLibrary(true);
+            return (
+                <>
+                    {renderHomeOrLibrary(false)}
+                    {/* Report Modal */}
+                    {reportModal.open && (
+                        <div className="modal-overlay" onClick={() => setReportModal({ open: false, matn: null, message: '' })}>
+                            <div className={`modal-content ${currentTheme.cardBg} ${currentTheme.cardBorder}`} onClick={(e) => e.stopPropagation()}>
+                                <h3 className={`text-xl font-bold mb-3 ${currentTheme.text}`}>إبلاغ عن متن: {reportModal.matn?.title}</h3>
+                                <textarea className={`w-full p-3 rounded-xl border ${currentTheme.input} ${currentTheme.text}`} rows="4" placeholder="اكتب سبب التبليغ..." value={reportModal.message} onChange={e => setReportModal({...reportModal, message: e.target.value})} />
+                                <div className="flex gap-3 mt-4">
+                                    <button onClick={sendReport} className={`flex-1 py-2 rounded-xl ${currentTheme.primaryAccent}`}>إرسال</button>
+                                    <button onClick={() => setReportModal({ open: false, matn: null, message: '' })} className={`flex-1 py-2 rounded-xl border ${currentTheme.btnHover}`}>إلغاء</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Comment Modal */}
+                    {commentModal.open && (
+                        <div className="modal-overlay" onClick={() => setCommentModal({ ...commentModal, open: false })}>
+                            <div className={`modal-content ${currentTheme.cardBg} ${currentTheme.cardBorder}`} onClick={(e) => e.stopPropagation()}>
+                                <h3 className={`text-xl font-bold mb-3 ${currentTheme.text}`}>التعليقات على: {commentModal.matn?.title}</h3>
+                                <div className="max-h-60 overflow-y-auto mb-4 space-y-2">
+                                    {commentModal.comments.length === 0 && <p className={`text-sm ${currentTheme.textMuted}`}>لا توجد تعليقات</p>}
+                                    {commentModal.comments.map((c, idx) => (
+                                        <div key={idx} className={`p-2 rounded-lg border ${currentTheme.emptySlot}`}>
+                                            <p className={`text-sm ${currentTheme.text}`}>{c.text}</p>
+                                            <p className={`text-xs ${currentTheme.textMuted} mt-1`}>{c.date}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <textarea className={`w-full p-3 rounded-xl border ${currentTheme.input} ${currentTheme.text}`} rows="3" placeholder="أضف تعليقاً..." value={commentModal.newComment} onChange={e => setCommentModal({...commentModal, newComment: e.target.value})} />
+                                <div className="flex gap-3 mt-4">
+                                    <button onClick={addNewComment} className={`flex-1 py-2 rounded-xl ${currentTheme.primaryAccent}`}>إضافة تعليق</button>
+                                    <button onClick={() => setCommentModal({ ...commentModal, open: false })} className={`flex-1 py-2 rounded-xl border ${currentTheme.btnHover}`}>إغلاق</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    {/* Custom Alert Modal */}
+                    {alertModal.open && (
+                        <AlertModal message={alertModal.message} onClose={() => setAlertModal({ open: false, message: '' })} currentTheme={currentTheme} />
+                    )}
+                    {/* Custom Confirm Modal */}
+                    {confirmModal.open && (
+                        <ConfirmModal message={confirmModal.message} onConfirm={confirmModal.onYes} onCancel={() => setConfirmModal({ open: false, message: '', onYes: null })} currentTheme={currentTheme} />
+                    )}
+                </>
+            );
         };
-
+        
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
